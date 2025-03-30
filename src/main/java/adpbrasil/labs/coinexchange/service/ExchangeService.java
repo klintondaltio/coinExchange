@@ -1,6 +1,7 @@
 package adpbrasil.labs.coinexchange.service;
 
 import adpbrasil.labs.coinexchange.config.CoinProperties;
+import adpbrasil.labs.coinexchange.dto.BillsInventoryResponse;
 import adpbrasil.labs.coinexchange.dto.ExchangeResponse;
 import adpbrasil.labs.coinexchange.exception.InsufficientCoinsException;
 import adpbrasil.labs.coinexchange.model.ExchangeTransaction;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,13 +22,13 @@ public class ExchangeService {
 
     private Map<Integer, Integer> coinInventory;
     // Campos para os valores das moedas (em centavos)
-    public static final int QUARTER = 25;
-    public static final int DIME = 10;
-    public static final int NICKEL = 5;
-    public static final int PENNY = 1;
+    public static final int TWENTYFIVECENTS = 25;
+    public static final int TENCENTS = 10;
+    public static final int FIVECENTS = 5;
+    public static final int ONECENT = 1;
 
-    private final int[] coinValues = {QUARTER, DIME, NICKEL, PENNY};
-    private final int[] coinValuesMax = {PENNY, NICKEL, DIME, QUARTER};
+    private final int[] coinValues = {TWENTYFIVECENTS, TENCENTS, FIVECENTS, ONECENT};
+    private final int[] coinValuesMax = {ONECENT, FIVECENTS, TENCENTS, TWENTYFIVECENTS};
 
     private final CoinProperties coinProperties;
     private final ExchangeTransactionRepository transactionRepository;
@@ -79,6 +81,9 @@ public class ExchangeService {
      * Adiciona moedas manualmente ao inventário.
      */
     public void addCoins(int coinValue, int quantity) {
+        if (!Arrays.stream(coinValues).anyMatch(v -> v == coinValue)) {
+            throw new IllegalArgumentException("Coin value must be one of: 1, 5, 10, 25.");
+        }
         coinInventory.put(coinValue, coinInventory.getOrDefault(coinValue, 0) + quantity);
         logger.info("Added {} coins of {} centavos. New count: {}.", quantity, coinValue, coinInventory.get(coinValue));
     }
@@ -87,15 +92,16 @@ public class ExchangeService {
      * Remove moedas manualmente do inventário.
      */
     public void removeCoins(int coinValue, int quantity) {
+        if (!Arrays.stream(coinValues).anyMatch(v -> v == coinValue)) {
+            throw new IllegalArgumentException("Coin value must be one of: 1, 5, 10, 25.");
+        }
         int available = coinInventory.getOrDefault(coinValue, 0);
         if (quantity > available) {
-            String errorMsg = "Not enough coins of " + coinValue + " centavos to remove.";
-            logger.warn(errorMsg);
-            throw new IllegalArgumentException(errorMsg);
+            throw new IllegalArgumentException("Not enough coins of " + coinValue + " centavos to remove.");
         }
         coinInventory.put(coinValue, available - quantity);
-        logger.info("Removed {} coins of {} centavos. New count: {}.", quantity, coinValue, coinInventory.get(coinValue));
     }
+
 
     public Map<Integer, Integer> getInventory() {
         return coinInventory;
@@ -197,11 +203,8 @@ public class ExchangeService {
      * Retorna o inventário dos bills recebidos.
      * Se múltiplas cédulas estiverem permitidas, retorna o total acumulado.
      */
-    public Map<String, Object> getBillsInventory() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("billInventory", billInventory);
-        result.put("totalBillsReceived", totalBillsReceived);
-        return result;
+    public BillsInventoryResponse getBillsInventory() {
+        return new BillsInventoryResponse(billInventory, totalBillsReceived);
     }
 
     /**

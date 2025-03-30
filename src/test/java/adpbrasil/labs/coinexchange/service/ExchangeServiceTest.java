@@ -1,11 +1,13 @@
 package adpbrasil.labs.coinexchange.service;
 
 import adpbrasil.labs.coinexchange.config.CoinProperties;
+import adpbrasil.labs.coinexchange.dto.BillsInventoryResponse;
 import adpbrasil.labs.coinexchange.exception.InsufficientCoinsException;
 import adpbrasil.labs.coinexchange.model.ExchangeTransaction;
 import adpbrasil.labs.coinexchange.repository.ExchangeTransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -27,11 +29,14 @@ public class ExchangeServiceTest {
     @Autowired
     private CoinProperties coinProperties;
 
+    private ExchangeService service;
+
     @BeforeEach
     public void setUp() {
         coinProperties.setInitialQuantity(100);
         exchangeService.resetInventory();
         transactionRepository.deleteAll();
+        service = new ExchangeService(coinProperties, Mockito.mock(ExchangeTransactionRepository.class));
     }
 
     @Test
@@ -217,19 +222,15 @@ public class ExchangeServiceTest {
 
     @Test
     public void testGetBillsInventory() {
-        // Limpa os inventários de bills
-        // Supondo que em setUp() os inventários são zerados ou não alterados.
         // Realiza uma troca com allowMultipleBills = false (cédula única)
         exchangeService.exchange(10, true, false); // deve registrar uma cédula de $10
-        Map<String, Object> bills = exchangeService.getBillsInventory();
-        @SuppressWarnings("unchecked")
-        Map<Integer, Integer> billInv = (Map<Integer, Integer>) bills.get("billInventory");
-        int total = (int) bills.get("totalBillsReceived");
-        // Como allowMultipleBills = false, totalBillsReceived não é incrementado
-        assertEquals(0, total);
-        // Verifica que a cédula de $10 foi registrada
-        assertEquals(1, billInv.get(10));
+
+        BillsInventoryResponse bills = exchangeService.getBillsInventory();
+
+        assertEquals(0, bills.getTotalBillsReceived()); // múltiplas cédulas = false
+        assertEquals(1, bills.getBillInventory().get(10));
     }
+
 
     @Test
     public void testAddCoinsMethod() {
@@ -257,6 +258,22 @@ public class ExchangeServiceTest {
         for (Integer coin : inv.keySet()) {
             exchangeService.removeCoins(coin, inv.get(coin));
         }
+    }
+
+    @Test
+    public void testAddCoinsWithInvalidValue() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            service.addCoins(3, 10); // Valor inválido
+        });
+        assertEquals("Coin value must be one of: 1, 5, 10, 25.", exception.getMessage());
+    }
+
+    @Test
+    public void testRemoveCoinsWithInvalidValue() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            service.removeCoins(50, 1); // Valor inválido
+        });
+        assertEquals("Coin value must be one of: 1, 5, 10, 25.", exception.getMessage());
     }
 
 

@@ -1,21 +1,17 @@
 package adpbrasil.labs.coinexchange.controller;
 
-import adpbrasil.labs.coinexchange.dto.ExchangeRequest;
-import adpbrasil.labs.coinexchange.dto.ExchangeResponse;
-import adpbrasil.labs.coinexchange.dto.InventoryUpdateRequest;
-import adpbrasil.labs.coinexchange.dto.ExchangeTransactionDto;
+import adpbrasil.labs.coinexchange.dto.*;
 import adpbrasil.labs.coinexchange.model.ExchangeTransaction;
 import adpbrasil.labs.coinexchange.service.ExchangeService;
-import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -95,9 +91,15 @@ public class ExchangeController {
     }
 
     @GetMapping("/inventory")
-    public ResponseEntity<?> getInventory() {
-        return ResponseEntity.ok(exchangeService.getInventory());
+    public ResponseEntity<InventoryResponse> getInventory() {
+        Map<Integer, Integer> inventory = exchangeService.getInventory();
+        int total = inventory.entrySet().stream()
+                .mapToInt(e -> e.getKey() * e.getValue())
+                .sum();
+
+        return ResponseEntity.ok(new InventoryResponse(inventory, total));
     }
+
 
     @PostMapping("/inventory/add")
     public ResponseEntity<?> addInventory(@Valid @RequestBody InventoryUpdateRequest request) {
@@ -111,20 +113,18 @@ public class ExchangeController {
         return ResponseEntity.ok(Map.of("message", "Inventory updated successfully", "inventory", exchangeService.getInventory()));
     }
 
-    // Novo endpoint para consultar o inventário de bills
     @GetMapping("/bills")
-    public ResponseEntity<?> getBillsInventory() {
+    public ResponseEntity<BillsInventoryResponse> getBillsInventory() {
         return ResponseEntity.ok(exchangeService.getBillsInventory());
     }
 
-    // Novo endpoint de administração para status da máquina
     @GetMapping("/admin/status")
-    public ResponseEntity<?> getMachineStatus() {
+    public ResponseEntity<MachineStatusResponse> getMachineStatus() {
         boolean operational = exchangeService.isMachineOperational();
         if (!operational) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("status", "Machine out of coins"));
+                    .body(new MachineStatusResponse("Machine out of coins"));
         }
-        return ResponseEntity.ok(Map.of("status", "Machine operational"));
+        return ResponseEntity.ok(new MachineStatusResponse("Machine operational"));
     }
 }

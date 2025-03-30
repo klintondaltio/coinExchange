@@ -4,9 +4,9 @@ import adpbrasil.labs.coinexchange.dto.ExchangeRequest;
 import adpbrasil.labs.coinexchange.dto.ExchangeResponse;
 import adpbrasil.labs.coinexchange.dto.InventoryUpdateRequest;
 import adpbrasil.labs.coinexchange.dto.ExchangeTransactionDto;
-import adpbrasil.labs.coinexchange.mapper.ExchangeTransactionMapper;
 import adpbrasil.labs.coinexchange.model.ExchangeTransaction;
 import adpbrasil.labs.coinexchange.service.ExchangeService;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -24,11 +24,9 @@ import java.util.Map;
 public class ExchangeController {
     private static final Logger logger = LoggerFactory.getLogger(ExchangeController.class);
     private final ExchangeService exchangeService;
-    private final ExchangeTransactionMapper transactionMapper;
 
-    public ExchangeController(ExchangeService exchangeService, ExchangeTransactionMapper transactionMapper) {
+    public ExchangeController(ExchangeService exchangeService) {
         this.exchangeService = exchangeService;
-        this.transactionMapper = transactionMapper;
     }
 
     @PostMapping
@@ -57,9 +55,20 @@ public class ExchangeController {
     @GetMapping("/history")
     public ResponseEntity<?> getHistory() {
         List<ExchangeTransaction> history = exchangeService.getTransactionHistory();
-        List<ExchangeTransactionDto> dtos = transactionMapper.toDtoList(history);
+
+        List<ExchangeTransactionDto> dtos = history.stream()
+                .map(tx -> new ExchangeTransactionDto(
+                        tx.getId(),
+                        tx.getAmount(),
+                        tx.isMinimal(),
+                        tx.getChange(),
+                        tx.getTransactionDate()
+                ))
+                .toList();
+
         return ResponseEntity.ok(dtos);
     }
+
 
     @GetMapping("/history/filter")
     public ResponseEntity<?> filterHistory(
@@ -73,7 +82,15 @@ public class ExchangeController {
         LocalDateTime end = (endDate != null) ? LocalDateTime.parse(endDate, DateTimeFormatter.ISO_DATE_TIME) : null;
 
         List<ExchangeTransaction> result = exchangeService.filterTransactionHistory(start, end, minAmount, maxAmount, minimal);
-        List<ExchangeTransactionDto> dtos = transactionMapper.toDtoList(result);
+        List<ExchangeTransactionDto> dtos = result.stream()
+                .map(tx -> new ExchangeTransactionDto(
+                        tx.getId(),
+                        tx.getAmount(),
+                        tx.isMinimal(),
+                        tx.getChange(),
+                        tx.getTransactionDate()
+                ))
+                .toList();
         return ResponseEntity.ok(dtos);
     }
 

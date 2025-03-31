@@ -1,54 +1,76 @@
-# React + TypeScript + Vite
+# Frontend - Coin Exchange
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este diretório contém o **frontend** da aplicação **Coin Exchange**, construído com **React**, **TypeScript**, **Vite** e **Tailwind CSS**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tecnologias Utilizadas
 
-## Expanding the ESLint configuration
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Axios](https://axios-http.com/)
+- [Lucide React](https://lucide.dev/) (ícones)
+- [shadcn/ui](https://ui.shadcn.com/) (componentes)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Como Rodar Localmente
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Acesse: [http://localhost:5173](http://localhost:5173)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+## Scripts Disponíveis
+
+| Comando            | Descrição                                |
+|--------------------|--------------------------------------------|
+| `npm run dev`      | Sobe o servidor de desenvolvimento         |
+| `npm run build`    | Gera os arquivos de produção (em `/dist`)  |
+| `npm run preview`  | Visualiza a build localmente               |
+
+---
+
+## Estrutura de Pastas
+
 ```
+frontend/
+├── public/                # Arquivos públicos
+├── src/
+│   ├── assets/            # Imagens e logo
+│   ├── components/        # Componentes reutilizáveis (header, toggle, etc.)
+│   ├── pages/             # Páginas da aplicação
+│   ├── theme.ts           # Lógica do modo claro/escuro
+│   └── App.tsx            # Roteador principal
+├── index.html             # HTML principal
+├── tailwind.config.js     # Configuração do Tailwind
+└── vite.config.ts         # Configuração do Vite
+```
+
+---
+
+## Tema Claro/Escuro
+
+O sistema possui suporte ao modo escuro com persistência em `localStorage`, controlado via botão no header.
+
+---
+
+## Funcionalidades
+
+- Troca de moedas por cédulas com estratégia mínima/máxima
+- Visualização e adição ao inventário
+- Histórico com filtros por data, valor e estratégia
+- Status da máquina (operacional ou fora de operação)
+- Dashboard geral
+- Suporte ao tema escuro
+
+---
+
+> Desenvolvido como parte do desafio técnico da **ADP Brasil Labs** por [@klintondaltio](https://github.com/klintondaltio)

@@ -1,4 +1,3 @@
-// InventoryPage.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -19,7 +18,7 @@ const InventoryPage: React.FC = () => {
             })
             .catch(() => {
                 setInventory({});
-                setMessage('Erro ao carregar inventário.');
+                setMessage('Error loading inventory.');
             });
     };
 
@@ -40,14 +39,14 @@ const InventoryPage: React.FC = () => {
                 setMessage(res.data.message);
             })
             .catch(() => {
-                setMessage('Erro ao adicionar moedas.');
+                setMessage('Error adding coins.');
             });
     };
 
     return (
         <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
-                🪙 Inventário de Moedas
+                Coin Inventory
             </h2>
 
             <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -56,26 +55,26 @@ const InventoryPage: React.FC = () => {
                     value={coinValue}
                     onChange={(e) => setCoinValue(parseInt(e.target.value))}
                     className="border border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-white rounded px-3 py-2 w-28"
-                    placeholder="Valor da moeda"
+                    placeholder="Coin value"
                 />
                 <input
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value))}
                     className="border border-gray-300 dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-white rounded px-3 py-2 w-28"
-                    placeholder="Quantidade"
+                    placeholder="Quantity"
                 />
                 <button
                     onClick={handleAdd}
                     className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                 >
-                    ➕ Adicionar
+                    ➕ Add
                 </button>
                 <button
                     onClick={fetchInventory}
                     className="ml-auto text-sm text-blue-600 dark:text-blue-400 underline"
                 >
-                    🔄 Recarregar
+                    🔄 Refresh
                 </button>
             </div>
 
@@ -84,8 +83,8 @@ const InventoryPage: React.FC = () => {
             <table className="w-full mt-4 border border-gray-200 dark:border-gray-700 text-sm">
                 <thead className="bg-gray-100 dark:bg-gray-800 text-left">
                 <tr>
-                    <th className="p-2 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">Moeda (¢)</th>
-                    <th className="p-2 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">Quantidade</th>
+                    <th className="p-2 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">Coin (¢)</th>
+                    <th className="p-2 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">Quantity</th>
                 </tr>
                 </thead>
                 <tbody>

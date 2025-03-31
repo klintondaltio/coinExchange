@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "coin")
 public class CoinProperties {
-    // Valor inicial configurável para cada moeda, padrão 100
     private int initialQuantity = 100;
 
     public int getInitialQuantity() {

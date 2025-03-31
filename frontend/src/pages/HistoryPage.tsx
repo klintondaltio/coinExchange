@@ -1,4 +1,3 @@
-// InventoryPage.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -61,7 +60,7 @@ const HistoryPage: React.FC = () => {
 
     return (
         <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">📜 Histórico de Transações</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Transaction History</h2>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <input
@@ -70,7 +69,7 @@ const HistoryPage: React.FC = () => {
                     value={filters.startDate}
                     onChange={handleChange}
                     className="border p-2 rounded text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
-                    placeholder="Início"
+                    placeholder="Start date"
                 />
                 <input
                     type="datetime-local"
@@ -78,7 +77,7 @@ const HistoryPage: React.FC = () => {
                     value={filters.endDate}
                     onChange={handleChange}
                     className="border p-2 rounded text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
-                    placeholder="Fim"
+                    placeholder="End date"
                 />
                 <input
                     type="number"
@@ -86,7 +85,7 @@ const HistoryPage: React.FC = () => {
                     value={filters.minAmount}
                     onChange={handleChange}
                     className="border p-2 rounded text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
-                    placeholder="Valor mínimo"
+                    placeholder="Minimum amount"
                 />
                 <input
                     type="number"
@@ -94,7 +93,7 @@ const HistoryPage: React.FC = () => {
                     value={filters.maxAmount}
                     onChange={handleChange}
                     className="border p-2 rounded text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
-                    placeholder="Valor máximo"
+                    placeholder="Maximum amount"
                 />
                 <select
                     name="minimal"
@@ -102,9 +101,9 @@ const HistoryPage: React.FC = () => {
                     onChange={handleChange}
                     className="border p-2 rounded text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600"
                 >
-                    <option value="">Qualquer estratégia</option>
-                    <option value="true">Mínimo de moedas</option>
-                    <option value="false">Máximo de moedas</option>
+                    <option value="">Any strategy</option>
+                    <option value="true">Minimal coins</option>
+                    <option value="false">Maximal coins</option>
                 </select>
             </div>
 
@@ -113,34 +112,34 @@ const HistoryPage: React.FC = () => {
                     onClick={fetchHistory}
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm"
                 >
-                    Filtrar Histórico
+                    Filter History
                 </button>
 
                 <button
                     onClick={clearFilters}
                     className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition text-sm dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
                 >
-                    Limpar Filtros
+                    Clear Filters
                 </button>
             </div>
 
             <div className="space-y-4">
                 {transactions.length === 0 ? (
-                    <p className="text-gray-500 dark:text-gray-400">Nenhuma transação encontrada.</p>
+                    <p className="text-gray-500 dark:text-gray-400">No transactions found.</p>
                 ) : (
                     transactions.map((t) => (
                         <div key={t.id} className="border border-gray-200 dark:border-gray-700 p-4 rounded bg-gray-50 dark:bg-gray-800">
                             <p className="text-sm text-gray-700 dark:text-gray-300">
-                                <strong>ID:</strong> {t.id} | <strong>Valor:</strong> ${t.amount} |{' '}
-                                <strong>Estratégia:</strong> {t.minimal ? 'Mínimo' : 'Máximo'}
+                                <strong>ID:</strong> {t.id} | <strong>Amount:</strong> ${t.amount} |{' '}
+                                <strong>Strategy:</strong> {t.minimal ? 'Minimal' : 'Maximal'}
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                                <strong>Data:</strong> {new Date(t.transactionDate).toLocaleString()}
+                                <strong>Date:</strong> {new Date(t.transactionDate).toLocaleString()}
                             </p>
                             <ul className="list-disc ml-5 text-sm mt-2 text-gray-800 dark:text-white">
                                 {Object.entries(t.change).map(([coin, qty]) => (
                                     <li key={coin}>
-                                        {qty} moeda(s) de {coin}¢
+                                        {qty} coin(s) of {coin}¢
                                     </li>
                                 ))}
                             </ul>

@@ -21,7 +21,6 @@ public class ExchangeService {
     private static final Logger logger = LoggerFactory.getLogger(ExchangeService.class);
 
     private Map<Integer, Integer> coinInventory;
-    // Campos para os valores das moedas (em centavos)
     public static final int TWENTYFIVECENTS = 25;
     public static final int TENCENTS = 10;
     public static final int FIVECENTS = 5;
@@ -32,10 +31,7 @@ public class ExchangeService {
 
     private final CoinProperties coinProperties;
     private final ExchangeTransactionRepository transactionRepository;
-
-    // Novo inventário para os bills recebidos (quando allowMultipleBills = false)
     private Map<Integer, Integer> billInventory = new HashMap<>();
-    // Acumulador para o total de bills recebidos (quando allowMultipleBills = true)
     private int totalBillsReceived = 0;
 
     public ExchangeService(CoinProperties coinProperties, ExchangeTransactionRepository transactionRepository) {
@@ -44,9 +40,6 @@ public class ExchangeService {
         resetInventory();
     }
 
-    /**
-     * Reinicia o inventário de moedas para o valor inicial definido nas propriedades.
-     */
     public void resetInventory() {
         coinInventory = new HashMap<>();
         int initial = coinProperties.getInitialQuantity();
@@ -61,11 +54,6 @@ public class ExchangeService {
         logger.info("Inventory reset to {} coins for each type.", initial);
     }
 
-    /**
-     * Registra o recebimento de um bill.
-     * Se allowMultipleBills for false, o valor deve ser uma das cédulas permitidas.
-     * Caso contrário, acumula o total recebido.
-     */
     private void registerBill(int amount, boolean allowMultipleBills) {
         if (!allowMultipleBills) {
             // Valor deve ser uma cédula válida; assume que a validação já ocorreu
@@ -77,9 +65,6 @@ public class ExchangeService {
         }
     }
 
-    /**
-     * Adiciona moedas manualmente ao inventário.
-     */
     public void addCoins(int coinValue, int quantity) {
         if (!Arrays.stream(coinValues).anyMatch(v -> v == coinValue)) {
             throw new IllegalArgumentException("Coin value must be one of: 1, 5, 10, 25.");
@@ -88,16 +73,13 @@ public class ExchangeService {
         logger.info("Added {} coins of {} centavos. New count: {}.", quantity, coinValue, coinInventory.get(coinValue));
     }
 
-    /**
-     * Remove moedas manualmente do inventário.
-     */
     public void removeCoins(int coinValue, int quantity) {
         if (!Arrays.stream(coinValues).anyMatch(v -> v == coinValue)) {
             throw new IllegalArgumentException("Coin value must be one of: 1, 5, 10, 25.");
         }
         int available = coinInventory.getOrDefault(coinValue, 0);
         if (quantity > available) {
-            throw new IllegalArgumentException("Not enough coins of " + coinValue + " centavos to remove.");
+            throw new IllegalArgumentException("Not enough coins of " + coinValue + " cents to remove.");
         }
         coinInventory.put(coinValue, available - quantity);
     }
@@ -107,12 +89,7 @@ public class ExchangeService {
         return coinInventory;
     }
 
-    /**
-     * Realiza a troca de um valor (em dólares) para moedas.
-     * Atualiza o inventário de bills conforme o parâmetro allowMultipleBills.
-     */
     public ExchangeResponse exchange(int amount, boolean minimal, boolean allowMultipleBills) {
-        // Validação de bills:
         if (allowMultipleBills) {
             if (amount <= 1) {
                 throw new IllegalArgumentException("When multiple bills are allowed, amount must be greater than 1.");
@@ -160,9 +137,6 @@ public class ExchangeService {
         }
     }
 
-    /**
-     * Retorna o status atual do inventário de moedas.
-     */
     public Map<String, Object> getStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("coinInventory", coinInventory);
@@ -173,16 +147,10 @@ public class ExchangeService {
         return status;
     }
 
-    /**
-     * Retorna o histórico de transações.
-     */
     public List<ExchangeTransaction> getTransactionHistory() {
         return transactionRepository.findAll();
     }
 
-    /**
-     * Filtra o histórico de transações com base em parâmetros opcionais.
-     */
     public List<ExchangeTransaction> filterTransactionHistory(
             LocalDateTime startDate,
             LocalDateTime endDate,
@@ -199,17 +167,10 @@ public class ExchangeService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Retorna o inventário dos bills recebidos.
-     * Se múltiplas cédulas estiverem permitidas, retorna o total acumulado.
-     */
     public BillsInventoryResponse getBillsInventory() {
         return new BillsInventoryResponse(billInventory, totalBillsReceived);
     }
 
-    /**
-     * Retorna se a máquina está operacional (ou seja, se há moedas disponíveis).
-     */
     public boolean isMachineOperational() {
         int totalCoins = coinInventory.values().stream().mapToInt(i -> i).sum();
         return totalCoins > 0;

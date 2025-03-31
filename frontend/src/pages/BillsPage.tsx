@@ -29,7 +29,7 @@ const BillsPage: React.FC = () => {
             {bills ? (
                 <div className="space-y-4">
                     <p className="text-gray-700 dark:text-gray-300 text-sm">
-                        Total bills received: <strong>{bills.totalBillsReceived}</strong>
+                        Total bills received by multiple bils: <strong>{bills.totalBillsReceived}</strong>
                     </p>
 
                     <table className="w-full border border-gray-200 dark:border-gray-700 text-sm">

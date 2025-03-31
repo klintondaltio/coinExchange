@@ -101,11 +101,14 @@ const ExchangePage = () => {
                 <div className="mt-6 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100 p-4 rounded shadow">
                     <h3 className="font-semibold mb-2">✅ {result.message}</h3>
                     <ul className="list-disc list-inside text-sm">
-                        {Object.entries(result.change).map(([coin, qty]) => (
-                            <li key={coin}>
-                                {qty} coin(s) of {coin}¢
-                            </li>
-                        ))}
+                        {Object.entries(result.change).map(([coin, qty]) => {
+                            const total = (Number(coin) * qty) / 100;
+                            return (
+                                <li key={coin}>
+                                    {qty} coin{qty > 1 ? 's' : ''} ({coin} cents) = ${total.toFixed(2)}
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             )}

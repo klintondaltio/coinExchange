@@ -47,7 +47,6 @@ public class ExchangeService {
             coinInventory.put(coin, initial);
         }
 
-        // Reset também do inventário de bills e acumulador
         billInventory = new HashMap<>();
         totalBillsReceived = 0;
 
@@ -56,7 +55,6 @@ public class ExchangeService {
 
     private void registerBill(int amount, boolean allowMultipleBills) {
         if (!allowMultipleBills) {
-            // Valor deve ser uma cédula válida; assume que a validação já ocorreu
             billInventory.put(amount, billInventory.getOrDefault(amount, 0) + 1);
             logger.info("Registered bill of ${}. New count: {}.", amount, billInventory.get(amount));
         } else {
@@ -95,47 +93,47 @@ public class ExchangeService {
                 throw new IllegalArgumentException("When multiple bills are allowed, amount must be greater than 1.");
             }
         } else {
-            // Lista de cédulas permitidas
             List<Integer> allowedBills = List.of(1, 2, 5, 10, 20, 50, 100);
             if (!allowedBills.contains(amount)) {
                 throw new IllegalArgumentException("Invalid bill denomination. Allowed denominations are: " + allowedBills);
             }
         }
 
-        // Registra o bill recebido
-        registerBill(amount, allowMultipleBills);
-
-        int remaining = amount * 100; // converte dólares para centavos
-        Map<Integer, Integer> change = new HashMap<>();
+        int remaining = amount * 100;
+        Map<Integer, Integer> changePreview = new HashMap<>();
         int[] coins = minimal ? coinValues : coinValuesMax;
 
         for (int coin : coins) {
             int available = coinInventory.getOrDefault(coin, 0);
-            int numCoins = Math.min(remaining / coin, available);
-            if (numCoins > 0) {
-                change.put(coin, numCoins);
-                remaining -= numCoins * coin;
-                coinInventory.put(coin, available - numCoins);
-                logger.debug("Used {} coins of {} cents. Remaining in inventory: {}.", numCoins, coin, coinInventory.get(coin));
+            int use = Math.min(remaining / coin, available);
+            if (use > 0) {
+                changePreview.put(coin, use);
+                remaining -= use * coin;
             }
         }
 
         if (remaining > 0) {
-            String errorMsg = "Not enough coins available for the exchange.";
-            logger.warn(errorMsg);
-            throw new InsufficientCoinsException(errorMsg);
-        } else {
-            String successMsg = "Exchange successful.";
-            logger.info(successMsg);
-            ExchangeTransaction transaction = new ExchangeTransaction();
-            transaction.setAmount(amount);
-            transaction.setMinimal(minimal);
-            transaction.setChange(change);
-            transaction.setTransactionDate(LocalDateTime.now());
-            transactionRepository.save(transaction);
-            return new ExchangeResponse(successMsg, change);
+            throw new InsufficientCoinsException("Not enough coins available for the exchange.");
         }
+
+        registerBill(amount, allowMultipleBills);
+
+        for (Map.Entry<Integer, Integer> entry : changePreview.entrySet()) {
+            int coin = entry.getKey();
+            int used = entry.getValue();
+            coinInventory.put(coin, coinInventory.get(coin) - used);
+        }
+
+        ExchangeTransaction transaction = new ExchangeTransaction();
+        transaction.setAmount(amount);
+        transaction.setMinimal(minimal);
+        transaction.setChange(changePreview);
+        transaction.setTransactionDate(LocalDateTime.now());
+        transactionRepository.save(transaction);
+
+        return new ExchangeResponse("Exchange successful.", changePreview);
     }
+
 
     public Map<String, Object> getStatus() {
         Map<String, Object> status = new HashMap<>();

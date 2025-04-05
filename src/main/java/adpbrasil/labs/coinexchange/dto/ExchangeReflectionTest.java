@@ -1,5 +1,4 @@
 package adpbrasil.labs.coinexchange.dto;
-import adpbrasil.labs.coinexchange.dto.ExchangeRequest;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -14,6 +13,10 @@ public class ExchangeReflectionTest {
 
         /*for (Method method : clazz.getDeclaredMethods()) {
             System.out.println(method.getName());
+        }*/
+
+        /*for (Method method : clazz.getDeclaredMethods()) {
+            System.out.println(method.getName() + " - " + Arrays.toString(method.getParameterTypes()));
         }*/
 
         // 3. Usar setters via reflexão

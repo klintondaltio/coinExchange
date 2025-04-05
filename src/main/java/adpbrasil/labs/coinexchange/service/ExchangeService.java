@@ -3,8 +3,10 @@ package adpbrasil.labs.coinexchange.service;
 import adpbrasil.labs.coinexchange.config.CoinProperties;
 import adpbrasil.labs.coinexchange.dto.BillsInventoryResponse;
 import adpbrasil.labs.coinexchange.dto.ExchangeResponse;
+import adpbrasil.labs.coinexchange.dto.TransactionSummaryDTO;
 import adpbrasil.labs.coinexchange.exception.InsufficientCoinsException;
 import adpbrasil.labs.coinexchange.model.ExchangeTransaction;
+import adpbrasil.labs.coinexchange.projection.TransactionSummaryProjection;
 import adpbrasil.labs.coinexchange.repository.ExchangeTransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +73,21 @@ public class ExchangeService {
             totalBillsReceived += amount;
             logger.info("Added ${} to total bills. New total: ${}.", amount, totalBillsReceived);
         }
+    }
+
+
+    public List<TransactionSummaryDTO> getSummarizedTransactions() {
+        List<TransactionSummaryProjection> projections = transactionRepository.findAllSummarized();
+
+        return projections.stream().map(p -> {
+            ExchangeTransaction tx = transactionRepository.findById(p.getId()).orElseThrow();
+            int totalCoins = tx.getChange().values().stream().mapToInt(Integer::intValue).sum();
+            return new TransactionSummaryDTO(
+                    p.getAmount(),
+                    p.isMinimal(),
+                    totalCoins
+            );
+        }).toList();
     }
 
     public void addCoins(int coinValue, int quantity) {

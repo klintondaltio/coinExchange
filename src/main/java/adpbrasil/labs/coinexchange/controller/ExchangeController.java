@@ -128,5 +128,9 @@ public class ExchangeController {
         return ResponseEntity.ok(new MachineStatusResponse("Machine operational"));
     }
 
+    @GetMapping("/history/summary")
+    public ResponseEntity<List<TransactionSummaryDTO>> getSummaryHistory() {
+        return ResponseEntity.ok(exchangeService.getSummarizedTransactions());
+    }
 
 }

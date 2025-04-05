@@ -53,6 +53,14 @@ public class ExchangeService {
 
         logger.info("Inventory reset to {} coins for each type.", initial);
     }
+    /*
+        * Registra uma cédula recebida. Se allowMultipleBills for true, adiciona o valor
+        * ao total de cédulas recebidas. Caso contrário, registra a cédula no inventário.
+        *
+        * O uso de metodo privado é para encapsular a lógica de registro de cédulas.
+        * Metodos privados são usados para evitar que o código seja acessado fora da classe,
+        * o que é útil para manter a integridade do estado interno da classe.
+     */
 
     private void registerBill(int amount, boolean allowMultipleBills) {
         if (!allowMultipleBills) {
@@ -104,18 +112,27 @@ public class ExchangeService {
 
         // Registra o bill recebido
         registerBill(amount, allowMultipleBills);
-
+        // teste de mesa: 5 dolares
         int remaining = amount * 100; // converte dólares para centavos
+        //tenho então 500 centavos
         Map<Integer, Integer> change = new HashMap<>();
+        //vamos supor que a estratégia é gulosa tenho então decrescente(coinValues)
         int[] coins = minimal ? coinValues : coinValuesMax;
 
+
+        // tenho 15 moedas de 25 centavos
         for (int coin : coins) {
+            // a primeira moeda da lista é 25 centavos. Vai verificar que no invetario teno 15 moedas de 25
             int available = coinInventory.getOrDefault(coin, 0);
+            // se não tiver moeda de 25 centavos, vai para a próxima moeda
+            // se tiver, vai calcular quantas moedas de 25 centavos eu posso usar
+            // ex: 500 / 25 = 20 moedas de 25 centavos mas só tenho 15
             int numCoins = Math.min(remaining / coin, available);
             if (numCoins > 0) {
-                change.put(coin, numCoins);
-                remaining -= numCoins * coin;
-                coinInventory.put(coin, available - numCoins);
+                // vai usar as 15 moedas de 25 centavos
+                change.put(coin, numCoins);//Vai lançar 25 - 15
+                remaining -= numCoins * coin;// Vai subtrair de 500,  15*25 = 375 pra proxima moeda(10 centavos) vai faltar 125 centavos
+                coinInventory.put(coin, available - numCoins); // atualiza o numero de moedas de 25 na base
                 logger.debug("Used {} coins of {} cents. Remaining in inventory: {}.", numCoins, coin, coinInventory.get(coin));
             }
         }
@@ -140,9 +157,13 @@ public class ExchangeService {
     public Map<String, Object> getStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("coinInventory", coinInventory);
+        //totalCents vai rescebeer o valor total em centavos
+        //O stream vai percorrer o inventário de moedas e multiplicar o valor da moeda pela quantidade
+        //de moedas disponíveis. O resultado é somado para obter o valor total em centavos.
         int totalCents = coinInventory.entrySet().stream()
                 .mapToInt(e -> e.getKey() * e.getValue())
                 .sum();
+        // vai settar o valor total em dolares
         status.put("totalValue", "$" + (totalCents / 100.0));
         return status;
     }

@@ -127,4 +127,6 @@ public class ExchangeController {
         }
         return ResponseEntity.ok(new MachineStatusResponse("Machine operational"));
     }
+
+
 }

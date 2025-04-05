@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,10 +46,10 @@ public class ExchangeControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser
     public void testExchangeEndpointSingleBill() throws Exception {
         String json = "{ \"amount\": 10, \"allowMultipleBills\": false, \"minimal\": true }";
         mockMvc.perform(post("/api/exchange")
+                        .with(httpBasic("klinton", "klinton123"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())

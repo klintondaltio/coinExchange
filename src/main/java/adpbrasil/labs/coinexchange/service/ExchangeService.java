@@ -8,6 +8,7 @@ import adpbrasil.labs.coinexchange.exception.InsufficientCoinsException;
 import adpbrasil.labs.coinexchange.model.ExchangeTransaction;
 import adpbrasil.labs.coinexchange.projection.TransactionSummaryProjection;
 import adpbrasil.labs.coinexchange.repository.ExchangeTransactionRepository;
+import adpbrasil.labs.coinexchange.mapper.TransactionMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,10 +36,13 @@ public class ExchangeService {
     private final ExchangeTransactionRepository transactionRepository;
     private Map<Integer, Integer> billInventory = new HashMap<>();
     private int totalBillsReceived = 0;
+    private final TransactionMapper transactionMapper;
 
-    public ExchangeService(CoinProperties coinProperties, ExchangeTransactionRepository transactionRepository) {
+    public ExchangeService(CoinProperties coinProperties, ExchangeTransactionRepository transactionRepository,
+                           TransactionMapper transactionMapper) {
         this.coinProperties = coinProperties;
         this.transactionRepository = transactionRepository;
+        this.transactionMapper = transactionMapper;
         resetInventory();
     }
 
@@ -79,15 +83,12 @@ public class ExchangeService {
     public List<TransactionSummaryDTO> getSummarizedTransactions() {
         List<TransactionSummaryProjection> projections = transactionRepository.findAllSummarized();
 
-        return projections.stream().map(p -> {
-            ExchangeTransaction tx = transactionRepository.findById(p.getId()).orElseThrow();
-            int totalCoins = tx.getChange().values().stream().mapToInt(Integer::intValue).sum();
-            return new TransactionSummaryDTO(
-                    p.getAmount(),
-                    p.isMinimal(),
-                    totalCoins
-            );
-        }).toList();
+        return projections.stream()
+                .map(p -> {
+                    ExchangeTransaction tx = transactionRepository.findById(p.getId()).orElseThrow();
+                    return transactionMapper.toSummaryDTO(p, tx);
+                })
+                .toList();
     }
 
     public void addCoins(int coinValue, int quantity) {
@@ -120,56 +121,50 @@ public class ExchangeService {
                 throw new IllegalArgumentException("When multiple bills are allowed, amount must be greater than 1.");
             }
         } else {
-            // Lista de cédulas permitidas
             List<Integer> allowedBills = List.of(1, 2, 5, 10, 20, 50, 100);
             if (!allowedBills.contains(amount)) {
                 throw new IllegalArgumentException("Invalid bill denomination. Allowed denominations are: " + allowedBills);
             }
         }
 
-        // Registra o bill recebido
-        registerBill(amount, allowMultipleBills);
-        // teste de mesa: 5 dolares
-        int remaining = amount * 100; // converte dólares para centavos
-        //tenho então 500 centavos
-        Map<Integer, Integer> change = new HashMap<>();
-        //vamos supor que a estratégia é gulosa tenho então decrescente(coinValues)
+        // Antes de registrar o bill, valida se é possível realizar a troca
+        int remaining = amount * 100;
+        Map<Integer, Integer> changePreview = new HashMap<>();
         int[] coins = minimal ? coinValues : coinValuesMax;
 
-
-        // tenho 15 moedas de 25 centavos
         for (int coin : coins) {
-            // a primeira moeda da lista é 25 centavos. Vai verificar que no invetario teno 15 moedas de 25
             int available = coinInventory.getOrDefault(coin, 0);
-            // se não tiver moeda de 25 centavos, vai para a próxima moeda
-            // se tiver, vai calcular quantas moedas de 25 centavos eu posso usar
-            // ex: 500 / 25 = 20 moedas de 25 centavos mas só tenho 15
-            int numCoins = Math.min(remaining / coin, available);
-            if (numCoins > 0) {
-                // vai usar as 15 moedas de 25 centavos
-                change.put(coin, numCoins);//Vai lançar 25 - 15
-                remaining -= numCoins * coin;// Vai subtrair de 500,  15*25 = 375 pra proxima moeda(10 centavos) vai faltar 125 centavos
-                coinInventory.put(coin, available - numCoins); // atualiza o numero de moedas de 25 na base
-                logger.debug("Used {} coins of {} cents. Remaining in inventory: {}.", numCoins, coin, coinInventory.get(coin));
+            int use = Math.min(remaining / coin, available);
+            if (use > 0) {
+                changePreview.put(coin, use);
+                remaining -= use * coin;
             }
         }
 
         if (remaining > 0) {
-            String errorMsg = "Not enough coins available for the exchange.";
-            logger.warn(errorMsg);
-            throw new InsufficientCoinsException(errorMsg);
-        } else {
-            String successMsg = "Exchange successful.";
-            logger.info(successMsg);
-            ExchangeTransaction transaction = new ExchangeTransaction();
-            transaction.setAmount(amount);
-            transaction.setMinimal(minimal);
-            transaction.setChange(change);
-            transaction.setTransactionDate(LocalDateTime.now());
-            transactionRepository.save(transaction);
-            return new ExchangeResponse(successMsg, change);
+            throw new InsufficientCoinsException("Not enough coins available for the exchange.");
         }
+
+        // Agora que sabemos que é possível, registramos o bill
+        registerBill(amount, allowMultipleBills);
+
+        // E aplicamos de fato a troca
+        for (Map.Entry<Integer, Integer> entry : changePreview.entrySet()) {
+            int coin = entry.getKey();
+            int used = entry.getValue();
+            coinInventory.put(coin, coinInventory.get(coin) - used);
+        }
+
+        ExchangeTransaction transaction = new ExchangeTransaction();
+        transaction.setAmount(amount);
+        transaction.setMinimal(minimal);
+        transaction.setChange(changePreview);
+        transaction.setTransactionDate(LocalDateTime.now());
+        transactionRepository.save(transaction);
+
+        return new ExchangeResponse("Exchange successful.", changePreview);
     }
+
 
     public Map<String, Object> getStatus() {
         Map<String, Object> status = new HashMap<>();

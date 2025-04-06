@@ -2,7 +2,9 @@ package adpbrasil.labs.coinexchange.repository;
 
 import adpbrasil.labs.coinexchange.model.ExchangeTransaction;
 import adpbrasil.labs.coinexchange.projection.TransactionSummaryProjection;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,6 +17,7 @@ public interface ExchangeTransactionRepository extends JpaRepository<ExchangeTra
     @Query("SELECT t FROM ExchangeTransaction t WHERE t.minimal = :minimal")
     List<TransactionSummaryProjection> findByMinimalStrategy(@Param("minimal") boolean minimal);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t.id as id, t.amount as amount, t.minimal as minimal FROM ExchangeTransaction t")
     List<TransactionSummaryProjection> findAllSummarized();
 }

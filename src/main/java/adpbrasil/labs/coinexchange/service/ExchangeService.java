@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +38,8 @@ public class ExchangeService {
     private Map<Integer, Integer> billInventory = new HashMap<>();
     private int totalBillsReceived = 0;
     private final TransactionMapper transactionMapper;
+    private final ReentrantLock inventoryLock = new ReentrantLock();
+
 
     public ExchangeService(CoinProperties coinProperties, ExchangeTransactionRepository transactionRepository,
                            TransactionMapper transactionMapper) {
@@ -115,7 +118,7 @@ public class ExchangeService {
         return coinInventory;
     }
 
-    public ExchangeResponse exchange(int amount, boolean minimal, boolean allowMultipleBills) {
+    public synchronized ExchangeResponse exchange(int amount, boolean minimal, boolean allowMultipleBills) {
         if (allowMultipleBills) {
             if (amount <= 1) {
                 throw new IllegalArgumentException("When multiple bills are allowed, amount must be greater than 1.");
@@ -160,7 +163,12 @@ public class ExchangeService {
         transaction.setMinimal(minimal);
         transaction.setChange(changePreview);
         transaction.setTransactionDate(LocalDateTime.now());
-        transactionRepository.save(transaction);
+        inventoryLock.lock();
+        try {
+            transactionRepository.save(transaction);
+        } finally {
+            inventoryLock.unlock();
+        }
 
         return new ExchangeResponse("Exchange successful.", changePreview);
     }

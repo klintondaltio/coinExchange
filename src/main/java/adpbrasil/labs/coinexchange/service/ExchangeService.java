@@ -119,35 +119,9 @@ public class ExchangeService {
     }
 
     public synchronized ExchangeResponse exchange(int amount, boolean minimal, boolean allowMultipleBills) {
-        if (allowMultipleBills) {
-            if (amount <= 1) {
-                throw new IllegalArgumentException("When multiple bills are allowed, amount must be greater than 1.");
-            }
-        } else {
-            List<Integer> allowedBills = List.of(1, 2, 5, 10, 20, 50, 100);
-            if (!allowedBills.contains(amount)) {
-                throw new IllegalArgumentException("Invalid bill denomination. Allowed denominations are: " + allowedBills);
-            }
-        }
-
-        // Antes de registrar o bill, valida se é possível realizar a troca
-        int remaining = amount * 100;
+        validateNumberOfBills(amount, allowMultipleBills);
         Map<Integer, Integer> changePreview = new HashMap<>();
-        int[] coins = minimal ? coinValues : coinValuesMax;
-
-        for (int coin : coins) {
-            int available = coinInventory.getOrDefault(coin, 0);
-            int use = Math.min(remaining / coin, available);
-            if (use > 0) {
-                changePreview.put(coin, use);
-                remaining -= use * coin;
-            }
-        }
-
-        if (remaining > 0) {
-            throw new InsufficientCoinsException("Not enough coins available for the exchange.");
-        }
-
+        validateCoinValueDisponibility(minimal, amount, changePreview);
         // Agora que sabemos que é possível, registramos o bill
         registerBill(amount, allowMultipleBills);
 
@@ -173,6 +147,36 @@ public class ExchangeService {
         return new ExchangeResponse("Exchange successful.", changePreview);
     }
 
+    private void validateNumberOfBills(int amount, boolean allowMultipleBills) {
+        if (allowMultipleBills) {
+            if (amount <= 1) {
+                throw new IllegalArgumentException("When multiple bills are allowed, amount must be greater than 1.");
+            }
+        } else {
+            List<Integer> allowedBills = List.of(1, 2, 5, 10, 20, 50, 100);
+            if (!allowedBills.contains(amount)) {
+                throw new IllegalArgumentException("Invalid bill denomination. Allowed denominations are: " + allowedBills);
+            }
+        }
+    }
+
+    private void validateCoinValueDisponibility(boolean minimal, int amount, Map<Integer, Integer> changePreview) {
+        int[] coins = minimal ? coinValues : coinValuesMax;
+        // Antes de registrar o bill, valida se é possível realizar a troca
+        int remaining = amount * 100;
+        for (int coin : coins) {
+            int available = coinInventory.getOrDefault(coin, 0);
+            int use = Math.min(remaining / coin, available);
+            if (use > 0) {
+                changePreview.put(coin, use);
+                remaining -= use * coin;
+            }
+        }
+
+        if (remaining > 0) {
+            throw new InsufficientCoinsException("Not enough coins available for the exchange.");
+        }
+    }
 
     public Map<String, Object> getStatus() {
         Map<String, Object> status = new HashMap<>();

@@ -3,7 +3,7 @@ import axios from "axios";
 
 interface ExchangeResponse {
     message: string;
-    change: Record<number, number>;
+    change: Record<string, number>;
 }
 
 const ExchangePage = () => {
